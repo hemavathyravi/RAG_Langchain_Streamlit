@@ -5,8 +5,10 @@ langchain-google-genai
 langchain-experimental
 langchainhub
 langchain_chroma
-chromadb==0.3.29
+chromadb==0.4.22  # Update ChromaDB to latest stable version
 python-dotenv
 pypdf
 rapidocr-onnxruntime
 sentence-transformers
+tiktoken  # Required for tokenization in some LLMs
+pymupdf  # Alternative PDF parser if PyPDFLoader fails
