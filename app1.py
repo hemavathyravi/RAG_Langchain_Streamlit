@@ -1,5 +1,4 @@
 import streamlit as st
-import time
 import os
 import chromadb
 from langchain_community.document_loaders import PyPDFLoader
@@ -14,64 +13,72 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+API_KEY = os.getenv("GOOGLE_API_KEY")
+
+# Ensure API key is set
+if not API_KEY:
+    st.error("❌ API Key is missing! Set it in Streamlit Secrets or .env file.")
+    st.stop()
 
 # Streamlit Title
 st.title("RAG Application built on Gemini Model")
 
-# Load PDF - Fixing the Unicode Escape Issue in File Path
-pdf_path = r"C:\Users\Hemavathy\OneDrive\Desktop\AIML_RAG\BA7204-HUMAN_RESOURCE_MANAGEMENT.pdf"
-loader = PyPDFLoader(pdf_path)
-data = loader.load()
+# File Uploader
+uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
+if uploaded_file is not None:
+    with open("temp.pdf", "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    loader = PyPDFLoader("temp.pdf")
+    data = loader.load()
 
-# Split text into chunks
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000)
-docs = text_splitter.split_documents(data)
+    # Split text into chunks
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000)
+    docs = text_splitter.split_documents(data)
 
-# Initialize ChromaDB with persistent storage
-persist_directory = "chroma_db"
-chroma_client = chromadb.PersistentClient(path=persist_directory)
+    # Initialize ChromaDB
+    persist_directory = "chroma_db"
+    chroma_client = chromadb.PersistentClient(path=persist_directory)
 
-vectorstore = Chroma.from_documents(
-    documents=docs,
-    embedding=GoogleGenerativeAIEmbeddings(model="models/embedding-001"),
-    client=chroma_client
-)
-
-# Convert VectorStore to a retriever
-retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 10})
-
-# Load Gemini Model
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", temperature=0)
-
-# User Input
-query = st.chat_input("Say something: ") 
-
-if query:  # Ensure user input is not empty
-    # Define System Prompt
-    system_prompt = (
-        "You are an assistant for question-answering tasks. "
-        "Use the following pieces of retrieved context to answer "
-        "the question. If you don't know the answer, say that you "
-        "don't know. Use three sentences maximum and keep the "
-        "answer concise."
-        "\n\n"
-        "{context}"
+    vectorstore = Chroma.from_documents(
+        documents=docs,
+        embedding=GoogleGenerativeAIEmbeddings(model="models/embedding-001"),
+        client=chroma_client
     )
 
-    # Create Chat Prompt Template
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            ("human", "{input}"),
-        ]
-    )
+    # Convert VectorStore to a retriever
+    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 10})
 
-    # Create RAG Chain
-    question_answer_chain = create_stuff_documents_chain(llm, prompt)
-    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+    # Load Gemini Model
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", temperature=0)
 
-    # Invoke RAG chain
-    response = rag_chain.invoke({"input": query})
+    # User Input
+    query = st.chat_input("Ask a question about the document:")
 
-    # Display Response
-    st.write(response["answer"])
+    if query:
+        # Define System Prompt
+        system_prompt = (
+            "You are an assistant for question-answering tasks. "
+            "Use the following retrieved context to answer the question. "
+            "If you don't know, say you don't know. Keep answers concise."
+            "\n\n"
+            "{context}"
+        )
+
+        # Create Chat Prompt Template
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
+            ]
+        )
+
+        # Create RAG Chain
+        question_answer_chain = create_stuff_documents_chain(llm, prompt)
+        rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+
+        # Invoke RAG chain
+        response = rag_chain.invoke({"input": query})
+
+        # Display Response
+        st.write(response["answer"])
+
