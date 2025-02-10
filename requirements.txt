@@ -2,14 +2,11 @@ streamlit
 langchain
 langchain_community
 langchain-google-genai
-langchain-experimental
 langchainhub
 langchain_chroma
 chromadb
 python-dotenv
 pypdf
-rapidocr-onnxruntime
 sentence-transformers
-duckdb  # ✅ Add DuckDB as an alternative DB for Chroma
 tiktoken
 pymupdf
