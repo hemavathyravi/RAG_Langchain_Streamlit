@@ -3,8 +3,7 @@ langchain
 langchain_community
 langchain-google-genai
 langchainhub
-langchain_chroma
-chromadb
+faiss-cpu  # ✅ FAISS instead of ChromaDB
 python-dotenv
 pypdf
 sentence-transformers
