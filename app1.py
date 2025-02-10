@@ -3,7 +3,7 @@ import os
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_chroma import Chroma
+from langchain.vectorstores import FAISS  # ✅ Replace Chroma with FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -25,11 +25,10 @@ data = loader.load()
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000)
 docs = text_splitter.split_documents(data)
 
-# ✅ Use Chroma In-Memory Mode (NO SQLITE)
-vectorstore = Chroma.from_documents(
+# ✅ Use FAISS Instead of Chroma
+vectorstore = FAISS.from_documents(
     documents=docs,
-    embedding=GoogleGenerativeAIEmbeddings(model="models/embedding-001"),
-    persist_directory=None  # 🔹 Disables SQLite persistence
+    embedding=GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 )
 
 # Convert VectorStore to a retriever
