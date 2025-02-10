@@ -1,7 +1,5 @@
 import streamlit as st
-import time
 import os
-import chromadb
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -18,8 +16,8 @@ load_dotenv()
 # Streamlit Title
 st.title("RAG Application built on Gemini Model")
 
-# Load PDF
-pdf_path = "BA7204-HUMAN_RESOURCE_MANAGEMENT.pdf"  # Use relative path
+# Load PDF (Ensure the PDF is in the same directory)
+pdf_path = "BA7204-HUMAN_RESOURCE_MANAGEMENT.pdf"
 loader = PyPDFLoader(pdf_path)
 data = loader.load()
 
@@ -27,12 +25,11 @@ data = loader.load()
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000)
 docs = text_splitter.split_documents(data)
 
-# ✅ Use DuckDB instead of SQLite
+# ✅ Use Chroma In-Memory Mode (NO SQLITE)
 vectorstore = Chroma.from_documents(
     documents=docs,
     embedding=GoogleGenerativeAIEmbeddings(model="models/embedding-001"),
-    persist_directory="chroma_db",  # Still needed for persistence
-    collection_metadata={"db_type": "duckdb"}  # 🔹 Use DuckDB instead of SQLite
+    persist_directory=None  # 🔹 Disables SQLite persistence
 )
 
 # Convert VectorStore to a retriever
@@ -42,9 +39,9 @@ retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", temperature=0)
 
 # User Input
-query = st.chat_input("Say something: ") 
+query = st.chat_input("Say something: ")
 
-if query:  
+if query:
     system_prompt = (
         "You are an assistant for question-answering tasks. "
         "Use the following retrieved context to answer the question. "
