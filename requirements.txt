@@ -12,3 +12,5 @@ rapidocr-onnxruntime
 sentence-transformers
 tiktoken  # Required for tokenization in some LLMs
 pymupdf  # Alternative PDF parser if PyPDFLoader fails
+uvicorn
+fastapi
